@@ -83,7 +83,11 @@ namespace TileWatch.Commands
                             case 18:
                             case 77:
                             case 134:
-                            WorldGen.PlaceObject(t.X, t.Y, t.Type);
+                            i.active(true);
+                            i.frameX = -1;
+                            i.frameY = -1;
+                            i.type = t.Type;
+                            player.SendData(PacketTypes.PlaceObject, "", t.X, t.Y, t.Type);
                             break;
 
                             default:
