@@ -89,12 +89,24 @@ namespace TileWatch
                         var y = reader.ReadInt16();
                         var flags = reader.ReadInt16();
                         var flags2 = reader.ReadByte();
-                        
+
 
                         //get tile type
                         var tile = Main.tile[x, y];
                         var paint = tile.color();
                         var type = tile.type;
+                        var wallType = tile.wall;
+                        var wallPaint = tile.wallColor();
+                        var inactive = tile.inActive();
+                        var slope = tile.slope();
+                            
+                        var wall = false;
+
+                        if (action == 3 || action == 2)
+                        {
+                            wall = true;
+                        }
+
 
                         if (player.GetData<bool>("usinghistory"))
                         {
@@ -152,14 +164,12 @@ namespace TileWatch
                                     else if(b.Action == 2)
                                     {
                                         var name = _walls.Where(x => x.Item2 == b.Type).First().Item1;
-
                                         player.SendMessage($"{b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} destroyed this wall. ({dhms})", Color.LightYellow);
 
                                     }
                                     else if(b.Action == 3)
                                     {
                                         var name = _walls.Where(x => x.Item2 == b.Type).First().Item1;
-
 
                                         player.SendMessage($"{b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} placed the wall {name}. ({dhms})", Color.LightYellow);
 
@@ -201,12 +211,24 @@ namespace TileWatch
                         var t = await IModel.CreateAsync(CreateRequest.Bson<Tile>(x => x.Action = (int)action));
                         t.X = x;
                         t.Y = y;
-                        t.Type = type;
+                        if (wall == true)
+                        {
+                            t.Type = wallType;
+                            t.Wall = wall;
+                            t.Paint = wallPaint;
+                        }
+                        else
+                        {
+                            t.Paint = paint;
+                            t.Type = type;
+
+                        }
+
                         t.Player = player.Account.ID;
                         t.Time = DateTime.Now;
-                        t.Paint = tile.color();
+                        t.Inactive = inactive;
+                        t.Slope = slope;
                         
-               
 
                         break;
                     }
@@ -250,16 +272,16 @@ namespace TileWatch
                 set { _ = this.SaveAsync(x => x.Type, value); _type = value; }
             }
 
-            private int _paint;
-            public int Paint
+            private byte _paint;
+            public byte Paint
             {
                 get => _paint;
 
                 set { _ = this.SaveAsync(x => x.Paint, value); _paint = value; }
             }
 
-            private int _slope;
-            public int Slope
+            private byte _slope;
+            public byte Slope
             {
                 get => _slope;
 
@@ -299,6 +321,22 @@ namespace TileWatch
                 set { _ = this.SaveAsync(x => x.Y, value); _y = value; }
             }
 
+            private bool _inactive;
+
+            public bool Inactive
+            {
+                get => _inactive;
+
+                set { _ = this.SaveAsync(x => x.Inactive, value); _inactive = value; }
+            }
+
+            private bool _wall;
+            public bool Wall
+            {
+                get => _wall;
+
+                set { _ = this.SaveAsync(x => x.Wall, value); _wall = value; }
+            }
         }
 
 

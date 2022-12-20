@@ -25,17 +25,15 @@ namespace TileWatch.Commands
     internal class RollbackCommand :TSModuleBase<TSCommandContext>
     {
         [Command("rollback", "rback")]
-        public async Task<IResult> Rollback(string perp = "", int radius = 9999, string time = "")
+        public async Task<IResult> Rollback(string perp = "", int radius = 9999, string time = "10:10:10")
         {
             double rollbackTime = -1;
-            if(time != "")
+            if (time != "")
             {
                 rollbackTime = System.TimeSpan.Parse(time).TotalSeconds;
                 //turn time into DateTime
                 Console.WriteLine(time);
-                
-
-            }
+            }            
 
             var player = Context.Player;
             if (player == null)
@@ -53,7 +51,6 @@ namespace TileWatch.Commands
 
             foreach (TWatch.Tile t in tiles)
             {
-                Console.WriteLine(t.X + " " + t.Y);
                 if ((t.X >= lowX && t.X <= hiX) == false && (t.Y >= lowY && t.Y <= hiY))
                 {
                     continue;
@@ -68,11 +65,41 @@ namespace TileWatch.Commands
                     {
                         i.active(false);
                     }
-                    i.ResetToType((ushort)t.Type);
 
-                    i.color((byte)t.Paint);
-                    player.SendData(PacketTypes.PaintTile, null, t.X, t.Y, (byte)t.Paint);
-                    player.SendTileSquareCentered(t.X, t.Y);
+                    if(t.Wall == true)
+                    {
+                        WorldGen.PlaceWall(t.X,t.Y,t.Type);
+                        i.wall = t.Type;
+                        i.wallColor(t.Paint);
+                        player.SendData(PacketTypes.PaintWall, "", t.X, t.Y, t.Paint);
+
+                    }
+                    else
+                        {
+                        switch (t.Type)
+                        {
+                            case 16:
+                            case 17:
+                            case 18:
+                            case 77:
+                            case 134:
+                            WorldGen.PlaceObject(t.X, t.Y, t.Type);
+                            break;
+
+                            default:
+                            i.ResetToType((ushort)t.Type);
+                            WorldGen.PlaceTile(t.X, t.Y, t.Type);
+                            i.slope(t.Slope);
+                            i.inActive(t.Inactive);
+                            break;
+                        }
+
+                       
+                        i.color(t.Paint);
+                        player.SendData(PacketTypes.PaintTile, "", t.X, t.Y, t.Paint);
+
+                }
+                player.SendTileSquareCentered(t.X, t.Y);
 
                 
 
