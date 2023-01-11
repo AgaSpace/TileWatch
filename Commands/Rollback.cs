@@ -18,6 +18,7 @@ using MongoDB.Driver.Linq;
 using Org.BouncyCastle.Utilities;
 using ZstdSharp.Unsafe;
 using System.Runtime.Serialization;
+using static MonoMod.InlineRT.MonoModRule;
 
 namespace TileWatch.Commands
 {
@@ -46,15 +47,16 @@ namespace TileWatch.Commands
             int hiX = ((int)player.Y) + radius;
             int hiY = ((int)player.Y) + radius;
 
-            List<TWatch.Tile> tiles = StorageProvider.GetMongoCollection<TWatch.Tile>("Tiles").Find(x => x.Player == player.Account.ID).ToList();
+            List<Tile> tiles = StorageProvider.GetMongoCollection<Tile>("Tiles").Find(x => x.Player == player.Account.ID).ToList();
             tiles = tiles.FindAll(x => (DateTime.UtcNow.Subtract(x.Time).TotalSeconds <= rollbackTime));
 
-            foreach (TWatch.Tile t in tiles)
+            foreach (Tile t in tiles)
             {
-                if ((t.X >= lowX && t.X <= hiX) == false && (t.Y >= lowY && t.Y <= hiY))
-                {
-                    continue;
-                }
+                    if ((t.X >= lowX && t.X <= hiX) == false && (t.Y >= lowY && t.Y <= hiY) == false)
+                    {
+                        continue;
+                    }
+                    
                     var i = Main.tile[t.X, t.Y];
 
                     if(t.Action == 0)
@@ -75,37 +77,42 @@ namespace TileWatch.Commands
 
                     }
                     else
-                        {
+                    {
+
+                    if (t.Object == true && t.Type != 82)
+                    {
+
                         switch (t.Type)
                         {
-                            case 16:
-                            case 17:
+                            case 15:
+                                {
+                                    WorldGen.Place1x2(t.X, t.Y, t.Type, false, 1, 1, 1, 1);
+                                    Console.WriteLine(t.Type);
+                                    break;
+                                }
                             case 18:
-                            case 77:
-                            case 134:
-                            i.active(true);
-                            i.frameX = -1;
-                            i.frameY = -1;
-                            i.type = t.Type;
-                            player.SendData(PacketTypes.PlaceObject, "", t.X, t.Y, t.Type);
-                            break;
-
+                                {
+                                    WorldGen.Place2x1(t.X, t.Y, t.Type, t.Style);
+                                    break;
+                                }
                             default:
-                            i.ResetToType((ushort)t.Type);
-                            WorldGen.PlaceTile(t.X, t.Y, t.Type);
-                            i.slope(t.Slope);
-                            i.inActive(t.Inactive);
-                            break;
+                                WorldGen.Place1x1(t.X, t.Y, t.Type);
+                                break;
                         }
+
+                        Console.WriteLine(t.Type + " attempted to place object");
+                    }
+                    else
+                        WorldGen.PlaceTile(t.X, t.Y,t.Type, false, true, -1, style: t.Style);
 
                        
                         i.color(t.Paint);
                         player.SendData(PacketTypes.PaintTile, "", t.X, t.Y, t.Paint);
+                        player.SendTileSquareCentered(t.X, t.Y);
 
                 }
-                player.SendTileSquareCentered(t.X, t.Y);
 
-                
+
 
             }
 
