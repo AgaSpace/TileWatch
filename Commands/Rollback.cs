@@ -79,15 +79,28 @@ namespace TileWatch.Commands
                     else
                     {
 
-                    if (t.Object == true && t.Type != 82)
+                    if (t.Object == true && t.Type != 82 || t.Type == 4)
                     {
 
                         switch (t.Type)
                         {
                             case 15:
                                 {
-                                    WorldGen.Place1x2(t.X, t.Y, t.Type, false, 1, 1, 1, 1);
+                                    Main.tile[t.X, t.Y].type = t.Type;
+                                    WorldGen.PlaceObject(t.X, t.Y, t.Type, false, style: t.Style, alternate: t.Alt, random:-1, direction:t.Direction ? 1 : -1);
                                     Console.WriteLine(t.Type);
+                                    var pf = new Auxiliary.Packets.PacketFactory()
+                                        .SetType((byte)PacketTypes.PlaceObject)
+                                        .PackInt16((short)t.X)
+                                        .PackInt16((short)t.Y)
+                                        .PackInt16((short)t.Type)
+                                        .PackInt16((short)t.Style)
+                                        .PackByte((byte)t.Alt)
+                                        .PackSByte((sbyte)t.Rand)
+                                        .PackBool(t.Direction)
+                                        .GetByteData();
+                                    TSPlayer.All.SendRawData(pf);
+                                    player.SendTileSquareCentered(t.X, t.Y);
                                     break;
                                 }
                             case 18:
@@ -96,7 +109,10 @@ namespace TileWatch.Commands
                                     break;
                                 }
                             default:
-                                WorldGen.Place1x1(t.X, t.Y, t.Type);
+                                Main.tile[t.X, t.Y].type = t.Type;
+                                WorldGen.PlaceObject(t.X, t.Y, t.Type, true, 0, -1, -1, -1);
+                                Console.WriteLine(t.Type);
+                                player.SendTileSquareCentered(t.X, t.Y);
                                 break;
                         }
 

@@ -12,6 +12,8 @@ using MongoDB.Driver;
 using Terraria.ID;
 using static MonoMod.Cil.RuntimeILReferenceBag.FastDelegateInvokers;
 using Terraria.WorldBuilding;
+using TileWatch.Commands;
+using System.ComponentModel;
 
 namespace TileWatch.Handling
 {
@@ -35,13 +37,12 @@ namespace TileWatch.Handling
                         if (player == null)
                             return;
 
-                        //get all packet data from e
-                        var reader = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length));
-                        var action = reader.ReadByte();
-                        var x = reader.ReadInt16();
-                        var y = reader.ReadInt16();
-                        var flags = reader.ReadInt16();
-                        var flags2 = reader.ReadByte();
+                        //get all packet data from 
+                        byte action = e.Msg.readBuffer[e.Index];
+                        int x = BitConverter.ToInt16(e.Msg.readBuffer, e.Index + 1);
+                        int y = BitConverter.ToInt16(e.Msg.readBuffer, e.Index + 3);
+                        ushort flags = BitConverter.ToUInt16(e.Msg.readBuffer, e.Index + 5);
+                        byte flags2 = e.Msg.readBuffer[e.Index + 7];
 
 
                         //get tile type
@@ -52,8 +53,6 @@ namespace TileWatch.Handling
                         var wallPaint = tile.wallColor();
                         var inactive = tile.inActive();
                         var slope = tile.slope();
-
-                        
 
                         var wall = false;
 
@@ -79,7 +78,6 @@ namespace TileWatch.Handling
                                 return;
                             }
                             player.SendMessage($"Tile history at: X: {x + ", Y: " + y}", Color.LightGreen);
-
 
                             foreach (Tile b in editList)
                             {
@@ -175,8 +173,17 @@ namespace TileWatch.Handling
                         else
                         {
                             t.Paint = paint;
-                            t.Type = type;
+                            if (action == 1)
+                                t.Type = flags;
+                            else
+                                t.Type = type;
+                            
+                        }
 
+                        if (action == 0 && type == 4)
+                        {
+                            Console.WriteLine($"{tile.frameX}\n{tile.frameY}\n{tile.BackTrack()}\n{tile.blockType()}\n{tile.BlockColorAndCoating()}\n{tile.bTileHeader}\n{tile.bTileHeader2}\n{tile.bTileHeader3}\n{tile.collisionType}\n{tile.frameNumber()}");
+                            flags2 = ((byte)tile.frameX);
                         }
 
                         t.Player = player.Account.ID;
@@ -199,31 +206,42 @@ namespace TileWatch.Handling
                         break;
                     }
                 case PacketTypes.PlaceObject:
-                {
+                    {
 
-                    //get player from e
-                    var player = TShock.Players[e.Msg.whoAmI];
+                        //get player from e
+                        var player = TShock.Players[e.Msg.whoAmI];
 
-                    if (player == null)
-                       return;
+                        if (player == null)
+                            return;
 
-                    int X = BitConverter.ToInt16(e.Msg.readBuffer, e.Index);
-                    int Y = BitConverter.ToInt16(e.Msg.readBuffer, e.Index + 2);
-                    ushort type = BitConverter.ToUInt16(e.Msg.readBuffer, e.Index + 4);
-                    int style = BitConverter.ToInt16(e.Msg.readBuffer, e.Index + 6);
-                    //DEBUG:
-                    //TSPlayer.All.SendInfoMessage($"Style: {style}");
-                    int alt = (byte)e.Msg.readBuffer[e.Index + 8];
-                    //TSPlayer.All.SendInfoMessage($"Alternate: {alt}");
-                    int rand = (sbyte)e.Msg.readBuffer[e.Index + 9];
-                    //TSPlayer.All.SendInfoMessage($"Random: {rand}");
-                    bool dir = BitConverter.ToBoolean(e.Msg.readBuffer, e.Index + 10);
+                        int X = BitConverter.ToInt16(e.Msg.readBuffer, e.Index);
+                        int Y = BitConverter.ToInt16(e.Msg.readBuffer, e.Index + 2);
+                        ushort type = BitConverter.ToUInt16(e.Msg.readBuffer, e.Index + 4);
+                        int style = BitConverter.ToInt16(e.Msg.readBuffer, e.Index + 6);
+                        //DEBUG:
+                        //TSPlayer.All.SendInfoMessage($"Style: {style}");
+                        int alt = (byte)e.Msg.readBuffer[e.Index + 8];
+                        //TSPlayer.All.SendInfoMessage($"Alternate: {alt}");
+                        int rand = (sbyte)e.Msg.readBuffer[e.Index + 9];
+                        //TSPlayer.All.SendInfoMessage($"Random: {rand}");
+                        bool dir = BitConverter.ToBoolean(e.Msg.readBuffer, e.Index + 10);
 
-/*                    var t = await IModel.CreateAsync(CreateRequest.Bson<Tile>(x => x.Action = (int)));
-*/
+                        var t = await IModel.CreateAsync(CreateRequest.Bson<Tile>(x => x.Action = 1));
+                        t.Wall = false;
+                        t.Alt = alt;
+                        t.Direction = dir;
+                        t.Rand = rand;
+                        t.Style = (byte)style;
+                        t.Type = type;
+                        t.X = X;
+                        t.Y = Y;
+                        t.Inactive = false;
+                        t.Object = true;
+                        t.Player = player.Account.ID;
+                        t.Time = DateTime.Now;
 
                         break;
-                }
+                    }
 
 
                 default:
