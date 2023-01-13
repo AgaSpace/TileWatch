@@ -37,21 +37,22 @@ namespace TileWatch.Commands
             if (perp == "")
                 return Error("Please enter a player name!");
 
-            int lowX = ((int)player.X) - radius;
-            int lowY = ((int)player.Y) - radius;
-            int hiX = ((int)player.Y) + radius;
-            int hiY = ((int)player.Y) + radius;
+            int lowX = ((int)player.X / 16) - radius;
+            int lowY = ((int)player.Y / 16) - radius;
+            int hiX = ((int)player.X / 16) + radius + 1;
+            int hiY = ((int)player.Y / 16) + radius + 2;
 
-            List<Tile> tiles = StorageProvider.GetMongoCollection<Tile>("Tiles").Find(x => x.Player == player.Account.ID && x.RolledBack == false).ToList();
-            tiles = tiles.FindAll(x => (DateTime.UtcNow.Subtract(x.Time).TotalSeconds <= rollbackTime));
+            List<Tile> tiles = StorageProvider.GetMongoCollection<Tile>("Tiles").Find(
+                x => x.Player == player.Account.ID
+                && x.RolledBack == false
+                ).ToList();
+
+            tiles = tiles.Where(x => DateTime.UtcNow.Subtract(x.Time).TotalSeconds <= rollbackTime)
+                .Where(x => lowX <= x.X && x.X <= hiX  && lowY <= x.Y && x.Y <= hiY)
+                .ToList();
 
             foreach (Tile t in tiles)
             {
-                if ((t.X >= lowX && t.X <= hiX) == false && (t.Y >= lowY && t.Y <= hiY) == false)
-                {
-                    continue;
-                }
-
                 var i = Main.tile[t.X, t.Y];
 
                 switch (t.Action)
