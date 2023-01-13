@@ -1,19 +1,12 @@
 ﻿using Auxiliary;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TerrariaApi.Server;
-using TShockAPI;
-using Terraria;
 using Microsoft.Xna.Framework;
 using MongoDB.Driver;
+using System.Text;
+using Terraria;
 using Terraria.ID;
-using static MonoMod.Cil.RuntimeILReferenceBag.FastDelegateInvokers;
-using Terraria.WorldBuilding;
-using TileWatch.Commands;
-using System.ComponentModel;
+using TerrariaApi.Server;
+using TShockAPI;
+
 
 namespace TileWatch.Handling
 {
@@ -34,9 +27,8 @@ namespace TileWatch.Handling
                         //get player from e
                         var player = TShock.Players[e.Msg.whoAmI];
 
-                        if (player == null)
-                            return;
-
+                        if (player == null) return;
+                        
                         //get all packet data from 
                         byte action = e.Msg.readBuffer[e.Index];
                         int x = BitConverter.ToInt16(e.Msg.readBuffer, e.Index + 1);
@@ -56,21 +48,16 @@ namespace TileWatch.Handling
 
                         var wall = false;
 
-                        if (action == 3 || action == 2)
-                        {
-                            wall = true;
-                        }
+                        if (action == 3 || action == 2) wall = true;
 
                         if (player.GetData<bool>("usinghistory"))
                         {
-
-                            //revert changes to the tile
                             e.Handled = true;
                             TSPlayer.All.SendTileSquareCentered(x, y, 4);
                             player.SetData("usinghistory", false);
                             var info = await IModel.GetAsync(GetRequest.Bson<Tile>(t => t.X == x && t.Y == y));
                             List<Tile> editList = StorageProvider.GetMongoCollection<Tile>("Tiles").Find(t => t.X == x && t.Y == y).SortByDescending(x => x.Time).Limit(8).SortBy(x => x.Time).ToList();
-
+                    
                             if (editList.Count == 0)
                             {
                                 player.SendErrorMessage("This tile has never been edited! (or there was no data found for it)");
@@ -135,7 +122,7 @@ namespace TileWatch.Handling
                                     //for unimplemented
                                     default:
                                         actionType = "manipulated";
-                                        if(b.Wall == true)
+                                        if (b.Wall == true)
                                             tileType = "wall";
                                         else
                                             tileType = "tile";
@@ -143,8 +130,8 @@ namespace TileWatch.Handling
 
                                 }
                                 var name = "null";
-                                
-                                if(b.Wall == true)
+
+                                if (b.Wall == true)
                                     name = _walls.Where(x => x.Item2 == b.Type).First().Item1;
                                 else
                                     name = _tiles.Where(x => x.Item2 == b.Type).First().Item1;
@@ -168,8 +155,13 @@ namespace TileWatch.Handling
                         Console.WriteLine($"Flags: {flags}");
                         Console.WriteLine($"Flags2: {flags2}");
 
+                        if(tile.type == TileID.OpenDoor)
+                        {
+                            x -= 1;
+                        }
 
-                        await IModel.CreateAsync(CreateRequest.Bson<Tile>(t => {
+                        await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
+                        {
 
                             t.Action = (int)action;
                             t.X = x;
@@ -179,7 +171,7 @@ namespace TileWatch.Handling
                             {
                                 if (action == 3)
                                     t.Type = flags;
-                                else
+                                else 
                                     t.Type = wallType;
 
                                 t.Wall = wall;
@@ -190,7 +182,7 @@ namespace TileWatch.Handling
                                 t.Paint = paint;
                                 if (action == 1)
                                     t.Type = flags;
-                                else
+                                else 
                                     t.Type = type;
 
                             }
@@ -200,34 +192,26 @@ namespace TileWatch.Handling
                             t.Inactive = inactive;
                             t.Slope = slope;
                             t.Style = flags2;
+                            t.RolledBack = false;
 
                             if (Terraria.ObjectData.TileObjectData.CustomPlace(type, flags2))
                                 t.Object = true;
-                            else
-                                t.Object = false;
+                            else t.Object = false;
 
                         }));
                         return;
                     }
                 case PacketTypes.PlaceObject:
                     {
-
-                        //get player from e
                         var player = TShock.Players[e.Msg.whoAmI];
-
-                        if (player == null)
-                            return;
+                        if (player == null) return;
 
                         int X = BitConverter.ToInt16(e.Msg.readBuffer, e.Index);
                         int Y = BitConverter.ToInt16(e.Msg.readBuffer, e.Index + 2);
                         ushort type = BitConverter.ToUInt16(e.Msg.readBuffer, e.Index + 4);
                         int style = BitConverter.ToInt16(e.Msg.readBuffer, e.Index + 6);
-                        //DEBUG:
-                        //TSPlayer.All.SendInfoMessage($"Style: {style}");
                         int alt = (byte)e.Msg.readBuffer[e.Index + 8];
-                        //TSPlayer.All.SendInfoMessage($"Alternate: {alt}");
                         int rand = (sbyte)e.Msg.readBuffer[e.Index + 9];
-                        //TSPlayer.All.SendInfoMessage($"Random: {rand}");
                         bool dir = BitConverter.ToBoolean(e.Msg.readBuffer, e.Index + 10);
 
                         await IModel.CreateAsync(CreateRequest.Bson<Tile>(x =>
@@ -245,6 +229,7 @@ namespace TileWatch.Handling
                             x.Object = true;
                             x.Player = player.Account.ID;
                             x.Time = DateTime.Now;
+                            x.RolledBack = false;
                         }));
 
                         return;

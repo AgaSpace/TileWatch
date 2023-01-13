@@ -1,15 +1,10 @@
 ﻿using CSF;
 using CSF.TShock;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TileWatch.Commands
 {
     [RequirePermission("tilewatch.history")]
-    internal class HistoryCommand :TSModuleBase<TSCommandContext>
+    internal class HistoryCommand : TSModuleBase<TSCommandContext>
     {
         [Command("history", "h", "twh", "checktile", "ct")]
         public IResult History()
@@ -24,7 +19,7 @@ namespace TileWatch.Commands
             player.SetData("usinghistory", true);
             return Success("Hit a block to get its history!");
         }
-        
+
 
     }
 }

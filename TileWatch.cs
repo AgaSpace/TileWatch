@@ -1,16 +1,7 @@
-﻿using Auxiliary;
-using CSF.TShock;
-using Microsoft.Xna.Framework;
-using MongoDB.Driver;
-using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
+﻿using CSF.TShock;
 using Terraria;
-using Terraria.ID;
 using TerrariaApi.Server;
 using TShockAPI;
-using TShockAPI.DB;
 
 namespace TileWatch
 {
@@ -62,7 +53,7 @@ namespace TileWatch
                 return;
 
             player.SetData("usinghistory", false);
-        }      
+        }
 
     }
 }
