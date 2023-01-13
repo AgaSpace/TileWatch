@@ -150,9 +150,9 @@ namespace TileWatch.Handling
                                     name = _tiles.Where(x => x.Item2 == b.Type).First().Item1;
 
                                 if (b.RolledBack)
-                                    player.SendMessage($"(ROLLED BACK) #{b.ObjectId.Increment} {b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} {actionType} the {tileType} ({dhms})", Color.Orange);
+                                    player.SendMessage($"(ROLLED BACK) #{b.ObjectId.Increment} {b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} {actionType} the {tileType} ({name}) ({dhms})", Color.Orange);
                                 else
-                                    player.SendMessage($"#{b.ObjectId.Increment} {b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} {actionType} the {tileType} ({dhms})", Color.LightYellow);
+                                    player.SendMessage($"#{b.ObjectId.Increment} {b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} {actionType} the {tileType} ({name}) ({dhms})", Color.LightYellow);
 
                             }
 
@@ -207,7 +207,7 @@ namespace TileWatch.Handling
                                 t.Object = false;
 
                         }));
-                        break;
+                        return;
                     }
                 case PacketTypes.PlaceObject:
                     {
@@ -232,7 +232,7 @@ namespace TileWatch.Handling
 
                         await IModel.CreateAsync(CreateRequest.Bson<Tile>(x =>
                         {
-
+                            x.Action = 1;
                             x.Wall = false;
                             x.Alt = alt;
                             x.Direction = dir;
@@ -247,12 +247,12 @@ namespace TileWatch.Handling
                             x.Time = DateTime.Now;
                         }));
 
-                        break;
+                        return;
                     }
 
 
                 default:
-                    break;
+                    return;
             }
 
 

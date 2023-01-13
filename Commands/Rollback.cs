@@ -61,6 +61,26 @@ namespace TileWatch.Commands
                         WorldGen.PlaceTile(t.X, t.Y, t.Type, style: t.Style);
                         WorldGen.paintTile(t.X, t.Y, t.Paint);
                         player.SendData(PacketTypes.PaintTile, "", t.X, t.Y, t.Paint);
+
+                            if (t.Object)
+                            {
+                                Main.tile[t.X, t.Y].type = t.Type;
+                                WorldGen.PlaceObject(t.X, t.Y, t.Type, false, style: t.Style, alternate: t.Alt, random: -1, direction: t.Direction ? 1 : -1);
+                                Console.WriteLine(t.Type);
+                                var pf = new Auxiliary.Packets.PacketFactory()
+                                    .SetType((byte)PacketTypes.PlaceObject)
+                                    .PackInt16((short)t.X)
+                                    .PackInt16((short)t.Y)
+                                    .PackInt16((short)t.Type)
+                                    .PackInt16((short)t.Style)
+                                    .PackByte((byte)t.Alt)
+                                    .PackSByte((sbyte)t.Rand)
+                                    .PackBool(t.Direction)
+                                    .GetByteData();
+                                TSPlayer.All.SendRawData(pf);
+                                player.SendTileSquareCentered(t.X, t.Y);
+                            }
+
                         break;
                     case 1:
                         WorldGen.KillTile(t.X, t.Y, noItem: true);
@@ -76,28 +96,8 @@ namespace TileWatch.Commands
                     default:
                         break;
                 }
-
-                if (t.Object == true && t.Type != 82)
-                {
-                    Main.tile[t.X, t.Y].type = t.Type;
-                    WorldGen.PlaceObject(t.X, t.Y, t.Type, false, style: t.Style, alternate: t.Alt, random: -1, direction: t.Direction ? 1 : -1);
-                    Console.WriteLine(t.Type);
-                    var pf = new Auxiliary.Packets.PacketFactory()
-                        .SetType((byte)PacketTypes.PlaceObject)
-                        .PackInt16((short)t.X)
-                        .PackInt16((short)t.Y)
-                        .PackInt16((short)t.Type)
-                        .PackInt16((short)t.Style)
-                        .PackByte((byte)t.Alt)
-                        .PackSByte((sbyte)t.Rand)
-                        .PackBool(t.Direction)
-                        .GetByteData();
-                    TSPlayer.All.SendRawData(pf);
-                    player.SendTileSquareCentered(t.X, t.Y);
-                }
-
                 player.SendTileSquareCentered(t.X, t.Y);
-                var rolledBackTile = await IModel.GetAsync(GetRequest.Bson<Tile>(v => v.X == t.X && v.Y == t.Y), null);
+                var rolledBackTile = await IModel.GetAsync(GetRequest.Bson<Tile>(v => v.X == t.X && v.Y == t.Y));
                 if(rolledBackTile != null)
                     rolledBackTile.RolledBack = true;
             }
