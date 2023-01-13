@@ -16,6 +16,13 @@ namespace TileWatch
                 set { _ = this.SaveAsync(x => x.Player, value); _player = value; }
             }
 
+            private bool _rolledBack;
+
+            public bool RolledBack
+            {
+                get => _rolledBack;
+                set { _ = this.SaveAsync(x => x.RolledBack, value); _rolledBack = value; }
+            }
 
             private ushort _type;
             public ushort Type

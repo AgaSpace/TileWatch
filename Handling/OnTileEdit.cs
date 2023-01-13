@@ -61,7 +61,6 @@ namespace TileWatch.Handling
                             wall = true;
                         }
 
-
                         if (player.GetData<bool>("usinghistory"))
                         {
 
@@ -100,51 +99,60 @@ namespace TileWatch.Handling
                                     dhms.Append(timeDiff.Seconds + "s");
                                 }
 
-                                if (b.Action == 0)
+                                string actionType = "";
+                                string tileType = "";
+
+                                switch (b.Action)
                                 {
-                                    var name = _tiles.Where(x => x.Item2 == b.Type).First().Item1;
+                                    case 0:
+                                        actionType = "destroyed";
+                                        tileType = "tile";
+                                        break;
+                                    case 1:
+                                        actionType = "placed";
+                                        tileType = "tile";
+                                        break;
+                                    case 2:
+                                        actionType = "destroyed";
+                                        tileType = "wall";
+                                        break;
+                                    case 3:
+                                        actionType = "placed";
+                                        tileType = "wall";
+                                        break;
+                                    case 21:
+                                        actionType = "replaced";
+                                        tileType = "tile";
+                                        break;
+                                    case 7:
+                                        actionType = "halved";
+                                        tileType = "tile";
+                                        break;
+                                    case 14:
+                                        actionType = "hammered";
+                                        tileType = "tile";
+                                        break;
+                                    //for unimplemented
+                                    default:
+                                        actionType = "manipulated";
+                                        if(b.Wall == true)
+                                            tileType = "wall";
+                                        else
+                                            tileType = "tile";
+                                        break;
 
-
-                                    player.SendMessage($"{b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} destroyed the tile {name}. ({dhms})", Color.LightYellow);
                                 }
-                                else if (b.Action == 1)
-                                {
-                                    var name = _tiles.Where(x => x.Item2 == b.Type).First().Item1;
+                                var name = "null";
+                                
+                                if(b.Wall == true)
+                                    name = _walls.Where(x => x.Item2 == b.Type).First().Item1;
+                                else
+                                    name = _tiles.Where(x => x.Item2 == b.Type).First().Item1;
 
-
-                                    player.SendMessage($"{b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} placed the tile {name}. ({dhms})", Color.LightYellow);
-                                }
-                                else if (b.Action == 2)
-                                {
-                                    var name = _walls.Where(x => x.Item2 == b.Type).FirstOrDefault().Item1;
-                                    player.SendMessage($"{b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} destroyed this wall. ({dhms})", Color.LightYellow);
-
-                                }
-                                else if (b.Action == 3)
-                                {
-                                    var name = _walls.Where(x => x.Item2 == b.Type).First().Item1;
-
-                                    player.SendMessage($"{b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} placed the wall {name}. ({dhms})", Color.LightYellow);
-
-                                }
-                                else if (b.Action == 21)
-                                {
-
-                                    var name = _tiles.Where(x => x.Item2 == b.Type).First().Item1;
-
-
-                                    player.SendMessage($"{b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} replaced the tile with {name}. ({dhms})", Color.LightYellow);
-                                }
-                                else if (b.Action == 7)
-                                {
-                                    player.SendMessage($"{b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} halved this tile. ({dhms})", Color.LightYellow);
-                                }
-                                else if (b.Action == 14)
-                                {
-                                    player.SendMessage($"{b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} hammered this tile. ({dhms})", Color.LightYellow);
-                                }
-
-
+                                if (b.RolledBack)
+                                    player.SendMessage($"(ROLLED BACK) #{b.ObjectId.Increment} {b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} {actionType} the {tileType} ({dhms})", Color.Orange);
+                                else
+                                    player.SendMessage($"#{b.ObjectId.Increment} {b.Time} - {TShock.UserAccounts.GetUserAccountByID(b.Player)} {actionType} the {tileType} ({dhms})", Color.LightYellow);
 
                             }
 
@@ -161,48 +169,44 @@ namespace TileWatch.Handling
                         Console.WriteLine($"Flags2: {flags2}");
 
 
-                        var t = await IModel.CreateAsync(CreateRequest.Bson<Tile>(x => x.Action = (int)action));
-                        t.X = x;
-                        t.Y = y;
-                        if (wall == true)
-                        {
-                            t.Type = wallType;
-                            t.Wall = wall;
-                            t.Paint = wallPaint;
-                        }
-                        else
-                        {
-                            t.Paint = paint;
-                            if (action == 1)
-                                t.Type = flags;
+                        await IModel.CreateAsync(CreateRequest.Bson<Tile>(t => {
+
+                            t.Action = (int)action;
+                            t.X = x;
+                            t.Y = y;
+
+                            if (wall == true)
+                            {
+                                if (action == 3)
+                                    t.Type = flags;
+                                else
+                                    t.Type = wallType;
+
+                                t.Wall = wall;
+                                t.Paint = wallPaint;
+                            }
                             else
-                                t.Type = type;
-                            
-                        }
+                            {
+                                t.Paint = paint;
+                                if (action == 1)
+                                    t.Type = flags;
+                                else
+                                    t.Type = type;
 
-                        if (action == 0 && type == 4)
-                        {
-                            Console.WriteLine($"{tile.frameX}\n{tile.frameY}\n{tile.BackTrack()}\n{tile.blockType()}\n{tile.BlockColorAndCoating()}\n{tile.bTileHeader}\n{tile.bTileHeader2}\n{tile.bTileHeader3}\n{tile.collisionType}\n{tile.frameNumber()}");
-                            flags2 = ((byte)tile.frameX);
-                        }
+                            }
 
-                        t.Player = player.Account.ID;
-                        t.Time = DateTime.Now;
-                        t.Inactive = inactive;
-                        t.Slope = slope;
-                        t.Style = flags2;
+                            t.Player = player.Account.ID;
+                            t.Time = DateTime.Now;
+                            t.Inactive = inactive;
+                            t.Slope = slope;
+                            t.Style = flags2;
 
-                        if(Terraria.ObjectData.TileObjectData.CustomPlace(type, flags2))
-                        {
-                            t.Object = true;
-                            Console.WriteLine("destroyed OBJECT");
-                        }
-                        else
-                        {
-                            t.Object = false;
-                        }
-                        
+                            if (Terraria.ObjectData.TileObjectData.CustomPlace(type, flags2))
+                                t.Object = true;
+                            else
+                                t.Object = false;
 
+                        }));
                         break;
                     }
                 case PacketTypes.PlaceObject:
@@ -226,19 +230,22 @@ namespace TileWatch.Handling
                         //TSPlayer.All.SendInfoMessage($"Random: {rand}");
                         bool dir = BitConverter.ToBoolean(e.Msg.readBuffer, e.Index + 10);
 
-                        var t = await IModel.CreateAsync(CreateRequest.Bson<Tile>(x => x.Action = 1));
-                        t.Wall = false;
-                        t.Alt = alt;
-                        t.Direction = dir;
-                        t.Rand = rand;
-                        t.Style = (byte)style;
-                        t.Type = type;
-                        t.X = X;
-                        t.Y = Y;
-                        t.Inactive = false;
-                        t.Object = true;
-                        t.Player = player.Account.ID;
-                        t.Time = DateTime.Now;
+                        await IModel.CreateAsync(CreateRequest.Bson<Tile>(x =>
+                        {
+
+                            x.Wall = false;
+                            x.Alt = alt;
+                            x.Direction = dir;
+                            x.Rand = rand;
+                            x.Style = (byte)style;
+                            x.Type = type;
+                            x.X = X;
+                            x.Y = Y;
+                            x.Inactive = false;
+                            x.Object = true;
+                            x.Player = player.Account.ID;
+                            x.Time = DateTime.Now;
+                        }));
 
                         break;
                     }

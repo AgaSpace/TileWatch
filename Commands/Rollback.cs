@@ -1,6 +1,7 @@
 ﻿using Auxiliary;
 using CSF;
 using CSF.TShock;
+using IL.Terraria.GameContent.Drawing;
 using MongoDB.Driver;
 using Terraria;
 using TShockAPI;
@@ -11,14 +12,23 @@ namespace TileWatch.Commands
     internal class RollbackCommand : TSModuleBase<TSCommandContext>
     {
         [Command("rollback", "rback")]
-        public async Task<IResult> Rollback(string perp = "", int radius = 9999, string time = "10:10:10")
+        public async Task<IResult> Rollback(string perp = "", string time = "", int radius = 9999)
         {
-            double rollbackTime = -1;
+            if (perp == "")
+                return Error("Please enter a valid player name. Ex. /rollback Average 10d 150");
+
+            var rollbackTime = -1;
             if (time != "")
             {
-                rollbackTime = System.TimeSpan.Parse(time).TotalSeconds;
+                var success = TShock.Utils.TryParseTime(time, out rollbackTime);
+                if (success == false)
+                    return Error("Invalid time format!");
                 //turn time into DateTime
                 Console.WriteLine(time);
+            }
+            else
+            {
+                return Error("Invalid time string! Proper format: _d_h_m_s, with at least one time specifier.");
             }
 
             var player = Context.Player;
@@ -32,7 +42,7 @@ namespace TileWatch.Commands
             int hiX = ((int)player.Y) + radius;
             int hiY = ((int)player.Y) + radius;
 
-            List<Tile> tiles = StorageProvider.GetMongoCollection<Tile>("Tiles").Find(x => x.Player == player.Account.ID).ToList();
+            List<Tile> tiles = StorageProvider.GetMongoCollection<Tile>("Tiles").Find(x => x.Player == player.Account.ID && x.RolledBack == false).ToList();
             tiles = tiles.FindAll(x => (DateTime.UtcNow.Subtract(x.Time).TotalSeconds <= rollbackTime));
 
             foreach (Tile t in tiles)
@@ -44,70 +54,51 @@ namespace TileWatch.Commands
 
                 var i = Main.tile[t.X, t.Y];
 
-                if (t.Action == 0)
+                switch (t.Action)
                 {
-                    i.active(true);
+                    case 0:
+                        WorldGen.PlaceTile(t.X, t.Y, t.Type, style: t.Style);
+                        WorldGen.paintTile(t.X, t.Y, t.Paint);
+                        player.SendData(PacketTypes.PaintTile, "", t.X, t.Y, t.Paint);
+                        break;
+                    case 1:
+                        WorldGen.KillTile(t.X, t.Y, noItem: true);
+                        break;
+                    case 2:
+                        WorldGen.PlaceWall(t.X, t.Y, t.Type);
+                        WorldGen.paintWall(t.X, t.Y, t.Paint);
+                        player.SendData(PacketTypes.PaintWall, "", t.X, t.Y, t.Paint);
+                        break;
+                    case 3:
+                        WorldGen.KillWall(t.X, t.Y);
+                        break;
+                    default:
+                        break;
                 }
-                if (t.Action == 1)
+
+                if (t.Object == true && t.Type != 82)
                 {
-                    i.active(false);
+                    Main.tile[t.X, t.Y].type = t.Type;
+                    WorldGen.PlaceObject(t.X, t.Y, t.Type, false, style: t.Style, alternate: t.Alt, random: -1, direction: t.Direction ? 1 : -1);
+                    Console.WriteLine(t.Type);
+                    var pf = new Auxiliary.Packets.PacketFactory()
+                        .SetType((byte)PacketTypes.PlaceObject)
+                        .PackInt16((short)t.X)
+                        .PackInt16((short)t.Y)
+                        .PackInt16((short)t.Type)
+                        .PackInt16((short)t.Style)
+                        .PackByte((byte)t.Alt)
+                        .PackSByte((sbyte)t.Rand)
+                        .PackBool(t.Direction)
+                        .GetByteData();
+                    TSPlayer.All.SendRawData(pf);
+                    player.SendTileSquareCentered(t.X, t.Y);
                 }
 
-                if (t.Wall == true)
-                {
-                    WorldGen.PlaceWall(t.X, t.Y, t.Type);
-                    i.wall = t.Type;
-                    i.wallColor(t.Paint);
-                    player.SendData(PacketTypes.PaintWall, "", t.X, t.Y, t.Paint);
-
-                }
-
-                else if (t.Object == true && t.Type != 82 || t.Type == 4)
-                {
-
-                    switch (t.Type)
-                    {
-                        case 15:
-                            {
-                                Main.tile[t.X, t.Y].type = t.Type;
-                                WorldGen.PlaceObject(t.X, t.Y, t.Type, false, style: t.Style, alternate: t.Alt, random: -1, direction: t.Direction ? 1 : -1);
-                                Console.WriteLine(t.Type);
-                                var pf = new Auxiliary.Packets.PacketFactory()
-                                    .SetType((byte)PacketTypes.PlaceObject)
-                                    .PackInt16((short)t.X)
-                                    .PackInt16((short)t.Y)
-                                    .PackInt16((short)t.Type)
-                                    .PackInt16((short)t.Style)
-                                    .PackByte((byte)t.Alt)
-                                    .PackSByte((sbyte)t.Rand)
-                                    .PackBool(t.Direction)
-                                    .GetByteData();
-                                TSPlayer.All.SendRawData(pf);
-                                player.SendTileSquareCentered(t.X, t.Y);
-                                break;
-                            }
-                        case 18:
-                            {
-                                WorldGen.Place2x1(t.X, t.Y, t.Type, t.Style);
-                                break;
-                            }
-                        default:
-                            Main.tile[t.X, t.Y].type = t.Type;
-                            WorldGen.PlaceObject(t.X, t.Y, t.Type, true, 0, -1, -1, -1);
-                            Console.WriteLine(t.Type);
-                            player.SendTileSquareCentered(t.X, t.Y);
-                            break;
-
-
-                    }
-                }
-                else
-                    WorldGen.PlaceTile(t.X, t.Y, t.Type, false, true, -1, style: t.Style);
-
-                i.color(t.Paint);
-                player.SendData(PacketTypes.PaintTile, "", t.X, t.Y, t.Paint);
                 player.SendTileSquareCentered(t.X, t.Y);
-
+                var rolledBackTile = await IModel.GetAsync(GetRequest.Bson<Tile>(v => v.X == t.X && v.Y == t.Y), null);
+                if(rolledBackTile != null)
+                    rolledBackTile.RolledBack = true;
             }
 
 
