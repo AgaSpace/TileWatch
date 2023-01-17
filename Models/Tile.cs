@@ -43,6 +43,15 @@ namespace TileWatch
             set { _ = this.SaveAsync(x => x.Slope, value); _slope = value; }
         }
 
+        private bool _halfbrick;
+
+        public bool Halfbrick
+        {
+            get => _halfbrick;
+
+            set { _ = this.SaveAsync(x => x.Halfbrick, value); _halfbrick = value; }
+        }
+
         private byte _style;
 
         public byte Style
@@ -138,7 +147,7 @@ namespace TileWatch
             set { _ = this.SaveAsync(x => x.Direction, value); _dir = value; }
         }
 
-
+        public int reference { get; set; } = 0;
 
     }
 

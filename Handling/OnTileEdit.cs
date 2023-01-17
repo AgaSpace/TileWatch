@@ -45,6 +45,9 @@ namespace TileWatch.Handling
                         var wallPaint = tile.wallColor();
                         var inactive = tile.inActive();
                         var slope = tile.slope();
+                        var halfbrick = tile.halfBrick();
+
+
 
                         var wall = false;
 
@@ -149,19 +152,26 @@ namespace TileWatch.Handling
                         Console.WriteLine("Action: " + action);
                         Console.WriteLine($"EditData: {tile.type}");
                         Console.WriteLine($"Paint: {tile.color()}");
-                        Console.WriteLine($"Slope: {tile.slope()}");
+                        Console.WriteLine($"Slope: {slope}");
+                        Console.WriteLine($"Halved: {halfbrick}");
                         Console.WriteLine($"X: {x}");
                         Console.WriteLine($"Y: {y}");
                         Console.WriteLine($"Flags: {flags}");
                         Console.WriteLine($"Flags2: {flags2}");
 
-                        if(tile.type == TileID.OpenDoor)
-                        {
-                            x -= 1;
-                        }
-
                         await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
                         {
+                            if (Terraria.ObjectData.TileObjectData.CustomPlace(type, flags2))
+                                t.Object = true;
+                            else t.Object = false;
+
+                            if (t.Object == true)
+                            {
+                                x = (int)Extensions.adjustFurniture(ref x, ref y, ref flags2).Value.X;
+                                y = (int)Extensions.adjustFurniture(ref x, ref y, ref flags2).Value.Y;
+
+                            }
+
 
                             t.Action = (int)action;
                             t.X = x;
@@ -191,12 +201,11 @@ namespace TileWatch.Handling
                             t.Time = DateTime.Now;
                             t.Inactive = inactive;
                             t.Slope = slope;
+                            t.Halfbrick = halfbrick;
                             t.Style = flags2;
                             t.RolledBack = false;
 
-                            if (Terraria.ObjectData.TileObjectData.CustomPlace(type, flags2))
-                                t.Object = true;
-                            else t.Object = false;
+                  
 
                         }));
                         return;
