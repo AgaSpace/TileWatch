@@ -99,8 +99,6 @@ namespace TileWatch.Commands
                         else
                             TrialCount = 0;
 
-                        Console.WriteLine(TrialCount);
-
                         //bool success = false;
                         if (Terraria.ObjectData.TileObjectData.CustomPlace(t.Type, t.Style) && t.Type != 82 && TrialCount < 2)
                         {
@@ -147,7 +145,7 @@ namespace TileWatch.Commands
                     frameOnly:
                         //restore slopes
                         if (t.Halfbrick)
-                            Main.tile[t.X, t.Y].halfBrick(true);
+                            WorldGen.PoundTile(t.X, t.Y);
                         else
                             WorldGen.SlopeTile(t.X, t.Y, t.Slope);
 
