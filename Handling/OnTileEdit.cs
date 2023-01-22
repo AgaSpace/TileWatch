@@ -150,7 +150,7 @@ namespace TileWatch.Handling
                         }
 
 
-/*                        DEBUG
+                        /*DEBUG*/
                         Console.WriteLine("Action: " + action);
                         Console.WriteLine($"EditData: {tile.type}");
                         Console.WriteLine($"Paint: {tile.color()}");
@@ -159,7 +159,7 @@ namespace TileWatch.Handling
                         Console.WriteLine($"X: {x}");
                         Console.WriteLine($"Y: {y}");
                         Console.WriteLine($"Flags: {flags}");
-                        Console.WriteLine($"Flags2: {flags2}");*/
+                        Console.WriteLine($"Flags2: {flags2}");
 
                         await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
                         {

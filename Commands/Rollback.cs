@@ -6,6 +6,7 @@ using System;
 using Terraria;
 using Terraria.ID;
 using Terraria.Localization;
+using Terraria.Utilities;
 using TShockAPI;
 using static MonoMod.InlineRT.MonoModRule;
 using static System.Net.Mime.MediaTypeNames;
@@ -45,6 +46,9 @@ namespace TileWatch.Commands
             tiles = tiles.Where(x => DateTime.UtcNow.Subtract(x.Time).TotalSeconds <= rollbackTime)
                 .Where(x => lowX <= x.X && x.X <= hiX && lowY <= x.Y && x.Y <= hiY)
                 .ToList();
+
+            if (Main.rand == null)
+                Main.rand = new UnifiedRandom();
 
             List<Trial> Trials = new List<Trial>();
 
@@ -102,7 +106,7 @@ namespace TileWatch.Commands
                         //bool success = false;
                         if (Terraria.ObjectData.TileObjectData.CustomPlace(t.Type, t.Style) && t.Type != 82 && TrialCount < 2)
                         {
-                            var success = WorldGen.PlaceObject(t.X, t.Y, t.Type, false, style: t.Style, alternate: t.Alt, random: -1, direction: t.Direction ? 1 : -1);
+                            var success = WorldGen.PlaceObject(t.X, t.Y, t.Type, false, style: t.Style, alternate: t.Alt, random: t.Rand, direction: t.Direction ? 1 : -1);
                             if (success)
                             {
                                 var pf = new Auxiliary.Packets.PacketFactory()
