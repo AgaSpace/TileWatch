@@ -8,7 +8,7 @@ namespace TileWatch
     [ApiVersion(2, 1)]
     public class TWatch : TerrariaPlugin
     {
-        private readonly TSCommandFramework _fx;
+        private TSCommandFramework _fx;
         public override string Author
         {
             get { return "Average"; }
@@ -34,7 +34,7 @@ namespace TileWatch
         {
             _fx = new(new()
             {
-                DefaultLogLevel = CSF.LogLevel.Warning,
+                DefaultLogLevel = CSF.LogLevel.Warning
             });
         }
 
@@ -45,6 +45,18 @@ namespace TileWatch
 
             await _fx.BuildModulesAsync(typeof(TWatch).Assembly);
         }
+
+        /*
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                TerrariaApi.Server.ServerApi.Hooks.NetGetData.Deregister(this, TileWatch.Handling.OnTileEdit.Event);
+                TerrariaApi.Server.ServerApi.Hooks.NetGreetPlayer.Deregister(this, NetGreet);
+            }
+            base.Dispose(disposing);
+        }
+        */
 
         private void NetGreet(GreetPlayerEventArgs args)
         {

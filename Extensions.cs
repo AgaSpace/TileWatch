@@ -543,6 +543,7 @@ namespace TileWatch
                 default:
                     break;
             }
+            
             if (style < 0) style = 0;
             if (!Main.tileFrameImportant[tile.type]) return null;
             if (div == 1) div = 0xFFFF;
@@ -551,7 +552,6 @@ namespace TileWatch
             if (origin) dest = new Vector2(0, 0);
             x += (int)(dest.X - relative.X);
             y += (int)(dest.Y - relative.Y);
-
             return new Vector2(x, y);
         }
 

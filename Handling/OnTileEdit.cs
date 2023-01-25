@@ -47,8 +47,6 @@ namespace TileWatch.Handling
                         var slope = tile.slope();
                         var halfbrick = tile.halfBrick();
 
-
-
                         var wall = false;
 
                         if (action == 3 || action == 2) wall = true;
@@ -58,6 +56,12 @@ namespace TileWatch.Handling
                             e.Handled = true;
                             TSPlayer.All.SendTileSquareCentered(x, y, 4);
                             player.SetData("usinghistory", false);
+
+                            if (Terraria.ObjectData.TileObjectData.CustomPlace(type, flags2))
+                            {
+
+                            }
+
                             var info = await IModel.GetAsync(GetRequest.Bson<Tile>(t => t.X == x && t.Y == y));
                             List<Tile> editList = StorageProvider.GetMongoCollection<Tile>("Tiles").Find(t => t.X == x && t.Y == y).SortByDescending(x => x.Time).Limit(8).SortBy(x => x.Time).ToList();
                     
@@ -148,9 +152,10 @@ namespace TileWatch.Handling
 
                             return;
                         }
-
+#if DEBUG
                         Console.WriteLine("Action: " + action);
                         Console.WriteLine($"EditData: {tile.type}");
+                        Console.WriteLine($"Wall: {tile.wall}");
                         Console.WriteLine($"Paint: {tile.color()}");
                         Console.WriteLine($"Slope: {slope}");
                         Console.WriteLine($"Halved: {halfbrick}");
@@ -158,20 +163,32 @@ namespace TileWatch.Handling
                         Console.WriteLine($"Y: {y}");
                         Console.WriteLine($"Flags: {flags}");
                         Console.WriteLine($"Flags2: {flags2}");
-
+#endif
                         await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
                         {
+                            /*
                             if (Terraria.ObjectData.TileObjectData.CustomPlace(type, flags2))
                                 t.Object = true;
                             else t.Object = false;
 
                             if (t.Object == true)
                             {
-                                x = (int)Extensions.adjustFurniture(ref x, ref y, ref flags2).Value.X;
-                                y = (int)Extensions.adjustFurniture(ref x, ref y, ref flags2).Value.Y;
+                                try {
+                                    var x2 = Extensions.adjustFurniture(ref x, ref y, ref flags2);
+                                    if (x2.HasValue)
+                                        x = (int)x2.Value.X;
 
+                                    var y2 = Extensions.adjustFurniture(ref x, ref y, ref flags2);
+                                    if (y2.HasValue)
+                                        y = (int)y2.Value.Y;
+                                }
+                                catch (Exception ex)
+                                {
+                                    TSPlayer.All.SendErrorMessage(ex.ToString());
+                                }
+                                
                             }
-
+                            */
 
                             t.Action = (int)action;
                             t.X = x;
@@ -194,7 +211,6 @@ namespace TileWatch.Handling
                                     t.Type = flags;
                                 else 
                                     t.Type = type;
-
                             }
 
                             t.Player = player.Account.ID;
@@ -204,9 +220,6 @@ namespace TileWatch.Handling
                             t.Halfbrick = halfbrick;
                             t.Style = flags2;
                             t.RolledBack = false;
-
-                  
-
                         }));
                         return;
                     }
