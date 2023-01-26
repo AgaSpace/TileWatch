@@ -8,7 +8,7 @@ namespace TileWatch
     [ApiVersion(2, 1)]
     public class TWatch : TerrariaPlugin
     {
-        private TSCommandFramework _fx;
+        private readonly TSCommandFramework _fx;
         public override string Author
         {
             get { return "Average"; }
@@ -47,6 +47,8 @@ namespace TileWatch
         }
 
         /*
+         * I was hoping to use Dispose, since my plugin can unload and load other plugins, but CSF does not allow this
+        
         protected override void Dispose(bool disposing)
         {
             if (disposing)

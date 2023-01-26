@@ -57,14 +57,9 @@ namespace TileWatch.Handling
                             TSPlayer.All.SendTileSquareCentered(x, y, 4);
                             player.SetData("usinghistory", false);
 
-                            if (Terraria.ObjectData.TileObjectData.CustomPlace(type, flags2))
-                            {
-
-                            }
-
                             var info = await IModel.GetAsync(GetRequest.Bson<Tile>(t => t.X == x && t.Y == y));
                             List<Tile> editList = StorageProvider.GetMongoCollection<Tile>("Tiles").Find(t => t.X == x && t.Y == y).SortByDescending(x => x.Time).Limit(8).SortBy(x => x.Time).ToList();
-                    
+
                             if (editList.Count == 0)
                             {
                                 player.SendErrorMessage("This tile has never been edited! (or there was no data found for it)");
@@ -152,6 +147,7 @@ namespace TileWatch.Handling
 
                             return;
                         }
+                        // Why keep deleting some code when you can just leave it in DEBUG?)
 #if DEBUG
                         Console.WriteLine("Action: " + action);
                         Console.WriteLine($"EditData: {tile.type}");
@@ -181,6 +177,7 @@ namespace TileWatch.Handling
                                     var y2 = Extensions.adjustFurniture(ref x, ref y, ref flags2);
                                     if (y2.HasValue)
                                         y = (int)y2.Value.Y;
+                                // Here I was planning to figure out why this
                                 }
                                 catch (Exception ex)
                                 {
@@ -188,6 +185,7 @@ namespace TileWatch.Handling
                                 }
                                 
                             }
+                            // I have come to the conclusion that this piece of code is unnecessary, since the X Y on the 17 package should always be the same.
                             */
 
                             t.Action = (int)action;
