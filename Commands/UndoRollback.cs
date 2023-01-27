@@ -59,7 +59,9 @@ namespace TileWatch.Commands
                             var success = WorldGen.PlaceObject(t.X, t.Y, t.Type, false, style: t.Style, alternate: t.Alt, random: -1, direction: t.Direction ? 1 : -1);
                             if (success)
                             {
+                            #if DEBUG
                                 Console.WriteLine(t.Type);
+                            #endif
                                 var pf = new Auxiliary.Packets.PacketFactory()
                                     .SetType((byte)PacketTypes.PlaceObject)
                                     .PackInt16((short)t.X)

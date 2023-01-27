@@ -45,14 +45,13 @@ namespace TileWatch
 
         public async override void Initialize()
         {
-            TerrariaApi.Server.ServerApi.Hooks.NetGetData.Register(this, TileWatch.Handling.OnTileEdit.Event);
-            TerrariaApi.Server.ServerApi.Hooks.NetGreetPlayer.Register(this, NetGreet);
+            ServerApi.Hooks.NetGetData.Register(this, Handling.OnTileEdit.Event);
+            ServerApi.Hooks.NetGreetPlayer.Register(this, NetGreet);
 
 			initBreaks();
 
 			await _fx.BuildModulesAsync(typeof(TWatch).Assembly);
         }
-
 		void initBreaks()
 		{
 			breakableBottom[4] = true;
@@ -251,21 +250,6 @@ namespace TileWatch
 			breakableWall[395] = true;
 			breakableWall[440] = true;
 		}
-
-		/*
-         * I was hoping to use Dispose, since my plugin can unload and load other plugins, but CSF does not allow this
-        
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                TerrariaApi.Server.ServerApi.Hooks.NetGetData.Deregister(this, TileWatch.Handling.OnTileEdit.Event);
-                TerrariaApi.Server.ServerApi.Hooks.NetGreetPlayer.Deregister(this, NetGreet);
-            }
-            base.Dispose(disposing);
-        }
-        */
-
 		private void NetGreet(GreetPlayerEventArgs args)
         {
             var player = TShock.Players[args.Who];

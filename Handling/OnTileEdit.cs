@@ -147,8 +147,7 @@ namespace TileWatch.Handling
 
                             return;
                         }
-                        // Why keep deleting some code when you can just leave it in DEBUG?)
-#if DEBUG
+                        #if DEBUG
                         Console.WriteLine("Action: " + action);
                         Console.WriteLine($"EditData: {tile.type}");
                         Console.WriteLine($"Wall: {tile.wall}");
@@ -159,7 +158,7 @@ namespace TileWatch.Handling
                         Console.WriteLine($"Y: {y}");
                         Console.WriteLine($"Flags: {flags}");
                         Console.WriteLine($"Flags2: {flags2}");
-#endif
+                        #endif
                         await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
                         {
                             t.Action = (int)action;
