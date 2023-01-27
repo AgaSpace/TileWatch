@@ -131,7 +131,7 @@ namespace TileWatch.Handling
                                         break;
 
                                 }
-                                var name = "null";
+                                string name = "null";
 
                                 if (b.Wall == true)
                                     name = _walls.Where(x => x.Item2 == b.Type).First().Item1;
@@ -147,18 +147,9 @@ namespace TileWatch.Handling
 
                             return;
                         }
-                        #if DEBUG
-                        Console.WriteLine("Action: " + action);
-                        Console.WriteLine($"EditData: {tile.type}");
-                        Console.WriteLine($"Wall: {tile.wall}");
-                        Console.WriteLine($"Paint: {tile.color()}");
-                        Console.WriteLine($"Slope: {slope}");
-                        Console.WriteLine($"Halved: {halfbrick}");
-                        Console.WriteLine($"X: {x}");
-                        Console.WriteLine($"Y: {y}");
-                        Console.WriteLine($"Flags: {flags}");
-                        Console.WriteLine($"Flags2: {flags2}");
-                        #endif
+
+                        Debug.OutputTileEdit(action, tile, slope, halfbrick, x, y, flags, flags2);
+
                         await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
                         {
                             t.Action = (int)action;
