@@ -25,7 +25,7 @@ namespace TileWatch.Handling
                 case PacketTypes.Tile:
                     {
                         //get player from e
-                        var player = TShock.Players[e.Msg.whoAmI];
+                        TSPlayer player = TShock.Players[e.Msg.whoAmI];
 
                         if (player == null) return;
                         
@@ -38,16 +38,16 @@ namespace TileWatch.Handling
 
 
                         //get tile type
-                        var tile = Main.tile[x, y];
-                        var paint = tile.color();
-                        var type = tile.type;
-                        var wallType = tile.wall;
-                        var wallPaint = tile.wallColor();
-                        var inactive = tile.inActive();
-                        var slope = tile.slope();
-                        var halfbrick = tile.halfBrick();
+                        ITile? tile = Main.tile[x, y];
+                        byte paint = tile.color();
+                        ushort type = tile.type;
+                        ushort wallType = tile.wall;
+                        byte wallPaint = tile.wallColor();
+                        bool inactive = tile.inActive();
+                        byte slope = tile.slope();
+                        bool halfbrick = tile.halfBrick();
 
-                        var wall = false;
+                        bool wall = false;
 
                         if (action == 3 || action == 2) wall = true;
 
@@ -150,39 +150,7 @@ namespace TileWatch.Handling
 
                         Debug.OutputTileEdit(action, tile, slope, halfbrick, x, y, flags, flags2);
 
-                        await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
-                        {
-                            t.Action = (int)action;
-                            t.X = x;
-                            t.Y = y;
-
-                            if (wall == true)
-                            {
-                                if (action == 3)
-                                    t.Type = flags;
-                                else 
-                                    t.Type = wallType;
-
-                                t.Wall = wall;
-                                t.Paint = wallPaint;
-                            }
-                            else
-                            {
-                                t.Paint = paint;
-                                if (action == 1)
-                                    t.Type = flags;
-                                else 
-                                    t.Type = type;
-                            }
-
-                            t.Player = player.Account.ID;
-                            t.Time = DateTime.Now;
-                            t.Inactive = inactive;
-                            t.Slope = slope;
-                            t.Halfbrick = halfbrick;
-                            t.Style = flags2;
-                            t.RolledBack = false;
-                        }));
+                        await Events.AddHistory(player, action, x, y, wall, wallType, wallPaint, type, paint, slope, halfbrick, flags, flags2, inactive);
 
                         if (action == 0 || action == 4 || action == 20) //killtile, killtilenoitem, trykilltile
                         {
