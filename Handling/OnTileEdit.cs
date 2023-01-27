@@ -162,32 +162,6 @@ namespace TileWatch.Handling
 #endif
                         await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
                         {
-                            /*
-                            if (Terraria.ObjectData.TileObjectData.CustomPlace(type, flags2))
-                                t.Object = true;
-                            else t.Object = false;
-
-                            if (t.Object == true)
-                            {
-                                try {
-                                    var x2 = Extensions.adjustFurniture(ref x, ref y, ref flags2);
-                                    if (x2.HasValue)
-                                        x = (int)x2.Value.X;
-
-                                    var y2 = Extensions.adjustFurniture(ref x, ref y, ref flags2);
-                                    if (y2.HasValue)
-                                        y = (int)y2.Value.Y;
-                                // Here I was planning to figure out why this
-                                }
-                                catch (Exception ex)
-                                {
-                                    TSPlayer.All.SendErrorMessage(ex.ToString());
-                                }
-                                
-                            }
-                            // I have come to the conclusion that this piece of code is unnecessary, since the X Y on the 17 package should always be the same.
-                            */
-
                             t.Action = (int)action;
                             t.X = x;
                             t.Y = y;
@@ -219,6 +193,70 @@ namespace TileWatch.Handling
                             t.Style = flags2;
                             t.RolledBack = false;
                         }));
+
+                        if (action == 0 || action == 4 || action == 20) //killtile, killtilenoitem, trykilltile
+                        {
+                            // Checking for furniture "on top of the block"
+                            if (Main.tileSolid[flags])
+                            {
+                                if (Main.tile[x, y - 1].active() && TWatch.breakableBottom[Main.tile[x, y - 1].type])
+                                    await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
+                                    {
+                                        t.Action = (int)action;
+                                        t.X = x;
+                                        t.Y = (y - 1);
+
+                                        t.Type = Main.tile[t.X, t.Y].type;
+                                        t.Style = Extensions.GetStyle(Main.tile[t.X, t.Y]);
+
+                                        t.Player = player.Account.ID;
+                                        t.Time = DateTime.Now;
+                                        t.Object = true;
+                                    }));
+                                if (Main.tile[x, y + 1].active() && TWatch.breakableTop[Main.tile[x, y + 1].type])
+                                    await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
+                                    {
+                                        t.Action = (int)action;
+                                        t.X = x;
+                                        t.Y = (y + 1);
+
+                                        t.Type = Main.tile[t.X, t.Y].type;
+                                        t.Style = Extensions.GetStyle(Main.tile[t.X, t.Y]);
+
+                                        t.Player = player.Account.ID;
+                                        t.Time = DateTime.Now;
+                                        t.Object = true;
+                                    }));
+                                if (Main.tile[x - 1, y].active() && TWatch.breakableSides[Main.tile[x - 1, y].type])
+                                    await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
+                                    {
+                                        t.Action = (int)action;
+                                        t.X = (x - 1);
+                                        t.Y = y;
+
+                                        t.Type = Main.tile[t.X, t.Y].type;
+                                        t.Style = Extensions.GetStyle(Main.tile[t.X, t.Y]);
+
+                                        t.Player = player.Account.ID;
+                                        t.Time = DateTime.Now;
+                                        t.Object = true;
+                                    }));
+                                if (Main.tile[x + 1, y].active() && TWatch.breakableSides[Main.tile[x + 1, y].type])
+                                    await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
+                                    {
+                                        t.Action = (int)action;
+                                        t.X = (x + 1);
+                                        t.Y = y;
+
+                                        t.Type = Main.tile[t.X, t.Y].type;
+                                        t.Style = Extensions.GetStyle(Main.tile[t.X, t.Y]);
+
+                                        t.Player = player.Account.ID;
+                                        t.Time = DateTime.Now;
+                                        t.Object = true;
+                                    }));
+                            }
+                        } 
                         return;
                     }
                 case PacketTypes.PlaceObject:
@@ -259,12 +297,6 @@ namespace TileWatch.Handling
                 default:
                     return;
             }
-
-
-
-
-
         }
-
     }
 }

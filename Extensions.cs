@@ -555,6 +555,33 @@ namespace TileWatch
             return new Vector2(x, y);
         }
 
+        public static byte GetStyle(Terraria.ITile tile)
+        {
+            int which = 10;
+            int div = 1;
+            getPlaceData(tile.type, ref which, ref div);
+            byte style = 0;
+            switch (which)
+            {
+                case 0:
+                    style = (byte)(tile.frameX / div);
+                    break;
+                case 1:
+                    style = (byte)(tile.frameY / div);
+                    break;
+                case 2:
+                    style = (byte)((tile.frameY / div) * 36 + (tile.frameX / div));
+                    break;
+                case 3: //Just statues for now
+                    style = (byte)((tile.frameX / 36) + (tile.frameY / 54) * 55);
+                    break;
+                default:
+                    break;
+            }
+            if (style < 0) style = 0;
+            return style;
+        }
+
         #endregion
     }
 
