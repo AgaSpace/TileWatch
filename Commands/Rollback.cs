@@ -223,6 +223,7 @@ namespace TileWatch.Commands
                             int newY = t.Y + 1;
                             while (newY < Main.maxTilesY - 1 && !Main.tile[t.X, newY].active())
                                 newY++;
+                            
                             if (Main.tile[t.X, newY].type == t.Type)
                             {
                                 t.Y = newY;
