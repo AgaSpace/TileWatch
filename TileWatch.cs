@@ -9,26 +9,13 @@ namespace TileWatch
     public class TWatch : TerrariaPlugin
     {
         private readonly TSCommandFramework _fx;
-        public override string Author
-        {
-            get { return "Average"; }
-        }
+        public override string Author => "Average";
 
-        public override string Description
-        {
-            get { return "A History rewrite"; }
-        }
+        public override string Description => "A history rewrite. Monitors all tile edits and allows rollbacks.";
 
-        public override string Name
-        {
-            get { return "TileWatch"; }
-        }
+        public override string Name => "TileWatch";
 
-        public override Version Version
-        {
-            get { return new Version(1, 0, 0, 0); }
-        }
-
+        public override Version Version => new Version(0,1);
 
         public TWatch(Main game) : base(game)
         {

@@ -47,5 +47,26 @@ namespace TileWatch.Handling
             }));
         }
 
+        public async static Task<Tile> ObjectAddHistory(TSPlayer player, int _x, int y, int alt, bool direction, int random, byte style, ushort type)
+        {
+            return await IModel.CreateAsync(CreateRequest.Bson<Tile>(x =>
+            {
+                x.Action = 1;
+                x.Wall = false;
+                x.Alt = alt;
+                x.Direction = direction;
+                x.Rand = random;
+                x.Style = style;
+                x.Type = type;
+                x.X = _x;
+                x.Y = y;
+                x.Inactive = false;
+                x.Object = true;
+                x.Player = player.Account.ID;
+                x.Time = DateTime.Now;
+                x.RolledBack = false;
+            }));
+        }
+
     }
 }

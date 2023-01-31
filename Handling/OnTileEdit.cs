@@ -1,4 +1,5 @@
 ﻿using Auxiliary;
+using Microsoft.VisualBasic;
 using Microsoft.Xna.Framework;
 using MongoDB.Driver;
 using System.Text;
@@ -12,16 +13,20 @@ namespace TileWatch.Handling
 {
     public static class OnTileEdit
     {
+        //these will be used to find the name of the tile/wall
         private static List<(string, int)> _tiles = Extensions.GetIds(typeof(TileID)).ToList();
         private static List<(string, int)> _walls = Extensions.GetIds(typeof(WallID)).ToList();
 
         public static async void Event(GetDataEventArgs e)
         {
+            //if event has already been handled, return
             if (e.Handled)
                 return;
 
+            //switch statement for packet types
             switch (e.MsgID)
             {
+                // on tile edits
                 case PacketTypes.Tile:
                     {
                         //get player from e
@@ -69,24 +74,7 @@ namespace TileWatch.Handling
 
                             foreach (Tile b in editList)
                             {
-                                TimeSpan timeDiff = DateTime.UtcNow - b.Time;
-                                StringBuilder dhms = new StringBuilder();
-                                if (timeDiff.Days != 0)
-                                {
-                                    dhms.Append(timeDiff.Days + "d");
-                                }
-                                if (timeDiff.Hours != 0)
-                                {
-                                    dhms.Append(timeDiff.Hours + "h");
-                                }
-                                if (timeDiff.Minutes != 0)
-                                {
-                                    dhms.Append(timeDiff.Minutes + "m");
-                                }
-                                if (timeDiff.Seconds != 0)
-                                {
-                                    dhms.Append(timeDiff.Seconds + "s");
-                                }
+                                string dhms = Extensions.ParseDate(b.Time);
 
                                 string actionType = "";
                                 string tileType = "";
@@ -158,61 +146,17 @@ namespace TileWatch.Handling
                             if (Main.tileSolid[flags])
                             {
                                 if (Main.tile[x, y - 1].active() && TWatch.breakableBottom[Main.tile[x, y - 1].type])
-                                    await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
-                                    {
-                                        t.Action = (int)action;
-                                        t.X = x;
-                                        t.Y = (y - 1);
+                                    await Events.AddHistory(player, action, x, (y-1), wall, wallType, wallPaint, type, paint, slope, halfbrick, flags, flags2, inactive);
 
-                                        t.Type = Main.tile[t.X, t.Y].type;
-                                        t.Style = Extensions.GetStyle(Main.tile[t.X, t.Y]);
-
-                                        t.Player = player.Account.ID;
-                                        t.Time = DateTime.Now;
-                                        t.Object = true;
-                                    }));
                                 if (Main.tile[x, y + 1].active() && TWatch.breakableTop[Main.tile[x, y + 1].type])
-                                    await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
-                                    {
-                                        t.Action = (int)action;
-                                        t.X = x;
-                                        t.Y = (y + 1);
+                                    await Events.AddHistory(player, action, x, (y+1), wall, wallType, wallPaint, type, paint, slope, halfbrick, flags, flags2, inactive);
 
-                                        t.Type = Main.tile[t.X, t.Y].type;
-                                        t.Style = Extensions.GetStyle(Main.tile[t.X, t.Y]);
-
-                                        t.Player = player.Account.ID;
-                                        t.Time = DateTime.Now;
-                                        t.Object = true;
-                                    }));
                                 if (Main.tile[x - 1, y].active() && TWatch.breakableSides[Main.tile[x - 1, y].type])
-                                    await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
-                                    {
-                                        t.Action = (int)action;
-                                        t.X = (x - 1);
-                                        t.Y = y;
-
-                                        t.Type = Main.tile[t.X, t.Y].type;
-                                        t.Style = Extensions.GetStyle(Main.tile[t.X, t.Y]);
-
-                                        t.Player = player.Account.ID;
-                                        t.Time = DateTime.Now;
-                                        t.Object = true;
-                                    }));
+                                    await Events.AddHistory(player, action, x-1, y, wall, wallType, wallPaint, type, paint, slope, halfbrick, flags, flags2, inactive);
+                                
                                 if (Main.tile[x + 1, y].active() && TWatch.breakableSides[Main.tile[x + 1, y].type])
-                                    await IModel.CreateAsync(CreateRequest.Bson<Tile>(t =>
-                                    {
-                                        t.Action = (int)action;
-                                        t.X = (x + 1);
-                                        t.Y = y;
+                                    await Events.AddHistory(player, action, x+1, y, wall, wallType, wallPaint, type, paint, slope, halfbrick, flags, flags2, inactive);
 
-                                        t.Type = Main.tile[t.X, t.Y].type;
-                                        t.Style = Extensions.GetStyle(Main.tile[t.X, t.Y]);
-
-                                        t.Player = player.Account.ID;
-                                        t.Time = DateTime.Now;
-                                        t.Object = true;
-                                    }));
                             }
                         } 
                         return;
@@ -222,6 +166,7 @@ namespace TileWatch.Handling
                         var player = TShock.Players[e.Msg.whoAmI];
                         if (player == null) return;
 
+                        //collect variables
                         int X = BitConverter.ToInt16(e.Msg.readBuffer, e.Index);
                         int Y = BitConverter.ToInt16(e.Msg.readBuffer, e.Index + 2);
                         ushort type = BitConverter.ToUInt16(e.Msg.readBuffer, e.Index + 4);
@@ -229,24 +174,8 @@ namespace TileWatch.Handling
                         int alt = (byte)e.Msg.readBuffer[e.Index + 8];
                         int rand = (sbyte)e.Msg.readBuffer[e.Index + 9];
                         bool dir = BitConverter.ToBoolean(e.Msg.readBuffer, e.Index + 10);
-
-                        await IModel.CreateAsync(CreateRequest.Bson<Tile>(x =>
-                        {
-                            x.Action = 1;
-                            x.Wall = false;
-                            x.Alt = alt;
-                            x.Direction = dir;
-                            x.Rand = rand;
-                            x.Style = (byte)style;
-                            x.Type = type;
-                            x.X = X;
-                            x.Y = Y;
-                            x.Inactive = false;
-                            x.Object = true;
-                            x.Player = player.Account.ID;
-                            x.Time = DateTime.Now;
-                            x.RolledBack = false;
-                        }));
+                        
+                        await Events.ObjectAddHistory(player, X, Y, alt, dir, rand, (byte)style, type);
 
                         return;
                     }
