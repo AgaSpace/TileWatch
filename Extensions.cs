@@ -1028,6 +1028,7 @@ namespace TileWatch
 
             switch (type)
             {
+                // Can't get an object for an open door, so I add it for a closed one.
                 case TileID.OpenDoor:
                     type = TileID.ClosedDoor;
                     break;
