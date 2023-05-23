@@ -5,6 +5,7 @@ using System.Text;
 using Terraria;
 using Terraria.ID;
 using Terraria.Localization;
+using Terraria.ObjectData;
 using TShockAPI;
 
 namespace TileWatch
@@ -464,10 +465,6 @@ namespace TileWatch
 
 
         }
-
-
-
-
 
         #region Stole these from OG History
 
@@ -1018,6 +1015,51 @@ namespace TileWatch
         }
 
         #endregion
+
+        public static Item GetFurnitureItem(ITile t)
+        {
+            return ContentSamples.ItemsByType
+                .FirstOrDefault(i => i.Value.placeStyle == GetFurnitureStyle(t, out int type)
+                    && i.Value.createTile == type).Value;
+        }
+        public static int GetFurnitureStyle(ITile t, out int type)
+        {
+            type = t.type;
+
+            switch (type)
+            {
+                case TileID.OpenDoor:
+                    type = TileID.ClosedDoor;
+                    break;
+            }
+
+            TileObjectData data = TileObjectData._data[type];
+
+            int x = (int)t.frameX / data.CoordinateFullWidth;
+            int y = (int)t.frameY / data.CoordinateFullHeight;
+
+            int wrap = data.StyleWrapLimit;
+            if (wrap == 0)
+                wrap = 1;
+            int hor;
+            if (data.StyleHorizontal)
+                hor = y * wrap + x;
+            else
+                hor = x * wrap + y;
+
+            int expectedStyle = hor / data.StyleMultiplier;
+
+            int styleLineSkip = data.StyleLineSkip;
+            if (styleLineSkip > 1)
+            {
+                if (data.StyleHorizontal)
+                    expectedStyle = y / styleLineSkip * wrap + x;
+                else
+                    expectedStyle = x / styleLineSkip * wrap + y;
+            }
+
+            return expectedStyle;
+        }
 
         public static string ParseDate(DateTime time)
         {
